@@ -43,8 +43,7 @@ namespace Perrinn424.TelemetryLapSystem
 
 
             float distanceDifference = current.Distance - previous.Distance;
-            float speed = current.Speed / 3.6f;
-            float distanceDifferenceFromSpeed = speed * dt;
+            float distanceDifferenceFromSpeed = current.Speed * dt;
             float offset = distanceDifferenceFromSpeed - distanceDifference;
             float error = offset / (distanceDifferenceFromSpeed);
 

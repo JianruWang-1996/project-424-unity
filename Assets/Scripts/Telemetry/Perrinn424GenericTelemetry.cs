@@ -1,12 +1,7 @@
 
 using UnityEngine;
 using VehiclePhysics;
-using VehiclePhysics.InputManagement;
-using EdyCommonTools;
 
-
-namespace Perrinn424
-{
 
 public class Perrinn424GenericTelemetry : VehicleBehaviour
 	{
@@ -21,7 +16,6 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 		vehicle.telemetry.specs.maxGearPosition = 1;
 		vehicle.telemetry.specs.minGearPosition = -1;
 		vehicle.telemetry.specs.maxAcceleration = 6 * Gravity.reference;
-		vehicle.telemetry.specs.maxAngularAcceleration = 4000 * Mathf.Deg2Rad;
 		vehicle.telemetry.specs.maxWheelTorque = 3000;
 		vehicle.telemetry.specs.maxSuspensionTravel = 0.08f;
 		vehicle.telemetry.specs.maxSuspensionLoad = 2000.0f * Gravity.magnitude;
@@ -92,14 +86,13 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 
 	public class Perrinn424Inputs : Telemetry.ChannelGroup
 		{
-		VehicleBase m_vehicle;
 		Steering.Settings m_steering;
 		Perrinn424CarController m_controller;
 
 
 		public override int GetChannelCount ()
 			{
-			return 5;
+			return 4;
 			}
 
 
@@ -113,9 +106,9 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 			{
 			// Access to information in the vehicle
 
-			m_vehicle = instance as VehicleBase;
-			m_steering = m_vehicle.GetInternalObject(typeof(Steering.Settings)) as Steering.Settings;
-			m_controller = m_vehicle.GetComponent<Perrinn424CarController>();
+			VehicleBase vehicle = instance as VehicleBase;
+			m_steering = vehicle.GetInternalObject(typeof(Steering.Settings)) as Steering.Settings;
+			m_controller = vehicle.GetComponent<Perrinn424CarController>();
 
 			// Fill-in channel information
 
@@ -123,7 +116,6 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 			channelInfo[1].SetNameAndSemantic("SteeringAngle", Telemetry.Semantic.SteeringWheelAngle);
 			channelInfo[2].SetNameAndSemantic("Throttle", Telemetry.Semantic.Ratio);
 			channelInfo[3].SetNameAndSemantic("BrakePressure", Telemetry.Semantic.BrakePressure);
-			channelInfo[4].SetNameAndSemantic("Speed", Telemetry.Semantic.Speed);
 			}
 
 
@@ -133,14 +125,12 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 			values[index+1] = m_controller.steerAngle;
 			values[index+2] = m_controller.throttleInput;
 			values[index+3] = m_controller.brakePressure;
-			values[index+4] = m_vehicle.speed;
 			}
 		}
 
 
 	public class Perrinn424Differential : Telemetry.ChannelGroup
 		{
-		VehicleBase m_vehicle;
 		VehicleBase.WheelState m_wheelFL;
 		VehicleBase.WheelState m_wheelFR;
 		VehicleBase.WheelState m_wheelRL;
@@ -149,7 +139,7 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 
 		public override int GetChannelCount ()
 			{
-			return 6;
+			return 4;
 			}
 
 
@@ -161,15 +151,15 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 
 		public override void GetChannelInfo (Telemetry.ChannelInfo[] channelInfo, Object instance)
 			{
-			m_vehicle = instance as VehicleBase;
+			VehicleBase vehicle = instance as VehicleBase;
 
 			// Retrieve states for the four monitored wheels
 
-			m_wheelFL = m_vehicle.wheelState[m_vehicle.GetWheelIndex(0, VehicleBase.WheelPos.Left)];
-			m_wheelFR = m_vehicle.wheelState[m_vehicle.GetWheelIndex(0, VehicleBase.WheelPos.Right)];
-			int rearAxle = m_vehicle.GetAxleCount() - 1;
-			m_wheelRL = m_vehicle.wheelState[m_vehicle.GetWheelIndex(rearAxle, VehicleBase.WheelPos.Left)];
-			m_wheelRR = m_vehicle.wheelState[m_vehicle.GetWheelIndex(rearAxle, VehicleBase.WheelPos.Right)];
+			m_wheelFL = vehicle.wheelState[vehicle.GetWheelIndex(0, VehicleBase.WheelPos.Left)];
+			m_wheelFR = vehicle.wheelState[vehicle.GetWheelIndex(0, VehicleBase.WheelPos.Right)];
+			int rearAxle = vehicle.GetAxleCount() - 1;
+			m_wheelRL = vehicle.wheelState[vehicle.GetWheelIndex(rearAxle, VehicleBase.WheelPos.Left)];
+			m_wheelRR = vehicle.wheelState[vehicle.GetWheelIndex(rearAxle, VehicleBase.WheelPos.Right)];
 
 			// Fill-in channel information
 
@@ -177,8 +167,6 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 			channelInfo[1].SetNameAndSemantic("TorqueDiffRear", Telemetry.Semantic.WheelTorque);
 			channelInfo[2].SetNameAndSemantic("SpeedDiffFront", Telemetry.Semantic.Speed);
 			channelInfo[3].SetNameAndSemantic("SpeedDiffRear", Telemetry.Semantic.Speed);
-			channelInfo[4].SetNameAndSemantic("TorqueFrictionFront", Telemetry.Semantic.WheelTorque);
-			channelInfo[5].SetNameAndSemantic("TorqueFrictionRear", Telemetry.Semantic.WheelTorque);
 			}
 
 
@@ -188,13 +176,6 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 			values[index+1] = m_wheelRL.driveTorque - m_wheelRR.driveTorque;
 			values[index+2] = m_wheelFL.angularVelocity * m_wheelFL.wheelCol.radius - m_wheelFR.angularVelocity * m_wheelFR.wheelCol.radius;
 			values[index+3] = m_wheelRL.angularVelocity * m_wheelRL.wheelCol.radius - m_wheelRR.angularVelocity * m_wheelRR.wheelCol.radius;
-
-			int[] custom = m_vehicle.data.Get(Channel.Custom);
-			float frontTorqueFiction = custom[Perrinn424Data.FrontDiffFriction] / 1000.0f;
-			float rearTorqueFiction = custom[Perrinn424Data.RearDiffFriction] / 1000.0f;
-
-			values[index+4] = frontTorqueFiction;
-			values[index+5] = rearTorqueFiction;
 			}
 		}
 
@@ -203,46 +184,35 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 		{
 		public override int GetChannelCount ()
 			{
-			return 6;
+			return 2;
 			}
 
 
 		public override Telemetry.PollFrequency GetPollFrequency ()
 			{
-			return Telemetry.PollFrequency.High;
+			return Telemetry.PollFrequency.Normal;
 			}
 
 
 		public override void GetChannelInfo (Telemetry.ChannelInfo[] channelInfo, Object instance)
 			{
-			channelInfo[0].SetNameAndSemantic("RideHeightFront", Telemetry.Semantic.SuspensionTravel);
-			channelInfo[1].SetNameAndSemantic("RideHeightRear", Telemetry.Semantic.SuspensionTravel);
-			channelInfo[2].SetNameAndSemantic("RollAngleFront", Telemetry.Semantic.BankAngle);
-			channelInfo[3].SetNameAndSemantic("RollAngleRear", Telemetry.Semantic.BankAngle);
-			channelInfo[4].SetNameAndSemantic("GroundSlope", Telemetry.Semantic.BankAngle);
-			channelInfo[5].SetNameAndSemantic("GroundGrade", Telemetry.Semantic.SignedRatio);
+			channelInfo[0].SetNameAndSemantic("PitchRate", Telemetry.Semantic.AngularVelocity);
+			channelInfo[1].SetNameAndSemantic("RollRate", Telemetry.Semantic.AngularVelocity);
 			}
 
 
 		public override void PollValues (float[] values, int index, Object instance)
 			{
 			VehicleBase vehicle = instance as VehicleBase;
-			int[] custom = vehicle.data.Get(Channel.Custom);
-
-			values[index+0] = custom[Perrinn424Data.FrontRideHeight] / 1000.0f;
-			values[index+1] = custom[Perrinn424Data.RearRideHeight] / 1000.0f;
-			values[index+2] = custom[Perrinn424Data.FrontRollAngle] / 1000.0f;
-			values[index+3] = custom[Perrinn424Data.RearRollAngle] / 1000.0f;
-			values[index+4] = custom[Perrinn424Data.GroundAngle] / 1000.0f;
-			values[index+5] = custom[Perrinn424Data.GroundSlope] / 1000.0f;
+			Vector3 angularVelocity = vehicle.cachedRigidbody.angularVelocity;
+			values[index+0] = angularVelocity.x;
+			values[index+1] = angularVelocity.z;
 			}
 		}
 
 
 	public class Perrinn424Tires : Telemetry.ChannelGroup
 		{
-		Perrinn424CarController m_controller;
-
 		VehicleBase.WheelState m_wheelFL;
 		VehicleBase.WheelState m_wheelFR;
 		VehicleBase.WheelState m_wheelRL;
@@ -251,7 +221,7 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 
 		public override int GetChannelCount ()
 			{
-			return 9;
+			return 8;
 			}
 
 
@@ -264,7 +234,6 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 		public override void GetChannelInfo (Telemetry.ChannelInfo[] channelInfo, Object instance)
 			{
 			VehicleBase vehicle = instance as VehicleBase;
-			m_controller = vehicle as Perrinn424CarController;
 
 			// Retrieve states for the four monitored wheels
 
@@ -290,7 +259,6 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 			channelInfo[5].SetNameAndSemantic("SlipAngleFR", Telemetry.Semantic.SlipAngle);
 			channelInfo[6].SetNameAndSemantic("SlipAngleRL", Telemetry.Semantic.SlipAngle);
 			channelInfo[7].SetNameAndSemantic("SlipAngleRR", Telemetry.Semantic.SlipAngle);
-			channelInfo[8].SetNameAndSemantic("Understeer", Telemetry.Semantic.SlipAngle);
 			}
 
 
@@ -300,7 +268,6 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 			FillData(m_wheelFR, values, index+1);
 			FillData(m_wheelRL, values, index+2);
 			FillData(m_wheelRR, values, index+3);
-			values[index+8] = m_controller.understeerAngle;
 			}
 
 
@@ -364,7 +331,7 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 
 	public class Perrinn424ForceFeedback : Telemetry.ChannelGroup
 		{
-		Perrinn424Input m_input;
+		VPDeviceInput m_deviceInput;
 
 
 		public override int GetChannelCount ()
@@ -382,7 +349,7 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 		public override void GetChannelInfo (Telemetry.ChannelInfo[] channelInfo, Object instance)
 			{
 			VehicleBase vehicle = instance as VehicleBase;
-			m_input = vehicle.GetComponentInChildren<Perrinn424Input>();
+			m_deviceInput = vehicle.GetComponentInChildren<VPDeviceInput>();
 
 			// Fill-in channel information
 
@@ -393,18 +360,15 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 
 		public override void PollValues (float[] values, int index, Object instance)
 			{
-			values[index+0] = float.NaN;
-			values[index+1] = float.NaN;
-
-			if (m_input != null && m_input.isActiveAndEnabled)
+			if (m_deviceInput != null && m_deviceInput.isActiveAndEnabled)
 				{
-				InputDevice.ForceFeedback forceFeedback = m_input.ForceFeedback();
-
-				if (forceFeedback != null)
-					{
-					values[index+0] = forceFeedback.force? forceFeedback.forceMagnitude : 0.0f;
-					values[index+1] = forceFeedback.damper? forceFeedback.damperCoefficient : 0.0f;
-					}
+				values[index+0] = m_deviceInput.currentForceFactor;
+				values[index+1] = m_deviceInput.currentDamperFactor;
+				}
+			else
+				{
+				values[index+0] = float.NaN;
+				values[index+1] = float.NaN;
 				}
 			}
 		}
@@ -469,5 +433,3 @@ public class Perrinn424GenericTelemetry : VehicleBehaviour
 			}
 		}
 	}
-
-}

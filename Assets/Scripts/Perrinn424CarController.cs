@@ -21,22 +21,15 @@ public struct Perrinn424Data					// ID			DESCRIPTION							UNITS		RESOLUTION		EX
 	public const int SteeringWheelAngle			= 2;		// Angle in the steering column			deg			1000			12420 = 12.42 degrees
 	public const int DrsPosition				= 3;		// DRS position. 0 = closed, 1 = open	%			1000			1000 = 1.0 = 100% open
 
-	public const int FrontDiffFriction			= 4;		// Front differential friction			Nm			1000			50000 = 50 Nm
-	public const int RearDiffFriction			= 5;		// Rear differential friction			Nm			1000			50000 = 50 Nm
-
-	public const int FrontRideHeight			= 10;		// Front ride height					m			1000			230 = 0.23 m = 230 mm
-	public const int FrontRollAngle				= 11;		// Front roll angle (signed)			deg			1000			2334 = 2.345 degrees
-	public const int RearRideHeight				= 12;		// Rear ride height						m			1000			230 = 0.23 m = 230 mm
-	public const int RearRollAngle				= 13;		// Rear roll angle (signed)				deg			1000			2334 = 2.345 degrees
-	public const int GroundAngle				= 14;		// Road angle (positive upwards)		deg			1000			2334 = 2.345 degrees
-	public const int GroundSlope				= 15;		// Road grade (positive upwards)		%			1000			1000 = 1.0 = 100%
-
-	public const int UndersteerAngle			= 16;		// Understeer angle (positive = oversteer)	deg		1000			-3.567 = 3.567 degrees of oversteer
+	public const int FrontRideHeight			= 4;		// Front ride height					m			1000			230 = 0.23 m = 230 mm
+	public const int FrontRollAngle				= 5;		// Front roll angle (signed)			deg			1000			2334 = 2.345 degrees
+	public const int RearRideHeight				= 6;		// Rear ride height						m			1000			230 = 0.23 m = 230 mm
+	public const int RearRollAngle				= 7;		// Rear roll angle (signed)				deg			1000			2334 = 2.345 degrees
 
 	// MGU data. Combine base ID with values.
 
-	public const int FrontMguBase				= 20;		// Base ID for front MGU data
-	public const int RearMguBase				= 30;		// Base ID for rear MGU data
+	public const int FrontMguBase				= 10;		// Base ID for front MGU data
+	public const int RearMguBase				= 20;		// Base ID for rear MGU data
 
 	public const int Rpm						= 0;		// Motor rpm							rpm			1000			1200000 = 1200 rpm
 	public const int Load						= 1;		// Motor load. Negative = renerative	ratio		1000			900 = 0.9 = 90%
@@ -51,13 +44,13 @@ public struct Perrinn424Data					// ID			DESCRIPTION							UNITS		RESOLUTION		EX
 
 	// Processed input data. Used by autopilot / automation.
 
-	public const int EnableProcessedInput		= 50;		// If non-zero, use the processed input data below. Otherwise, use standard Input channel.
+	public const int EnableProcessedInput		= 40;		// If non-zero, use the processed input data below. Otherwise, use standard Input channel.
 
-	public const int InputMguThrottle			= 51;		// Throttle to be sent to the MGUs		ratio		10000			5000 = 0.5 = 50%
-	public const int InputBrakePressure			= 52;		// Brake pressure in the circuit		bar			10000			305000 = 30.5 bar
-	public const int InputSteerAngle			= 53;		// Steer angle for the steering column	deg			10000			155000 = 15.5 degrees
-	public const int InputGear					= 54;		// Gear (forward / neutral / reverse)				0 = Neutral, 1 = Forward, -1 = Reverse
-	public const int InputDrsPosition			= 55;		// DRS position. 0 = closed, 1 = open	%			1000			1000 = 1.0 = 100% open
+	public const int InputMguThrottle			= 41;		// Throttle to be sent to the MGUs		ratio		10000			5000 = 0.5 = 50%
+	public const int InputBrakePressure			= 42;		// Brake pressure in the circuit		bar			10000			305000 = 30.5 bar
+	public const int InputSteerAngle			= 43;		// Steer angle for the steering column	deg			10000			155000 = 15.5 degrees
+	public const int InputGear					= 44;		// Gear (forward / neutral / reverse)				0 = Neutral, 1 = Forward, -1 = Reverse
+	public const int InputDrsPosition			= 45;		// DRS position. 0 = closed, 1 = open	%			1000			1000 = 1.0 = 100% open
 	}
 
 
@@ -73,7 +66,8 @@ public class Perrinn424CarController : VehicleBase
 	public TireDataContainerBase frontTires;
 	public TireDataContainerBase rearTires;
 
-	public GroundTracker.Settings groundTracking = new GroundTracker.Settings();
+	public Transform frontAxleReference;
+	public Transform rearAxleReference;
 
 	// Powertrain and dynamics
 
@@ -109,12 +103,10 @@ public class Perrinn424CarController : VehicleBase
 
 	// Internal values exposed
 
-	public float throttleInput => m_throttleInput;
-	public float brakePressure => m_brakePressure;
-	public float steerAngle => m_steerAngle;
-	public int gear => m_gear;
-
-	public float understeerAngle => m_understeerAngle;
+	public float throttleInput { get => m_throttleInput; }
+	public float brakePressure { get => m_brakePressure; }
+	public float steerAngle { get => m_steerAngle; }
+	public int gear { get => m_gear; }
 
 
 	// Private members
@@ -131,9 +123,9 @@ public class Perrinn424CarController : VehicleBase
 	int m_gearMode;
 	int m_prevGearMode;
 	int m_gear;
-	float m_understeerAngle;
 
-	GroundTracker m_groundTracker = new GroundTracker();
+	AxleFrameSensor m_frontAxleSensor = new AxleFrameSensor();
+	AxleFrameSensor m_rearAxleSensor = new AxleFrameSensor();
 
 
 	// Internal Powertrain helper class
@@ -316,9 +308,10 @@ public class Perrinn424CarController : VehicleBase
 		m_rearPowertrain.mgu.settings = rearMgu;
 		m_rearPowertrain.differential.settings = rearDifferential;
 
-		// Configure ground tracking
+		// Configure axle sensors
 
-		m_groundTracker.settings = groundTracking;
+		m_frontAxleSensor.Configure(this, 0);
+		m_rearAxleSensor.Configure(this, 1);
 
 		// Initialize internal data
 
@@ -365,6 +358,14 @@ public class Perrinn424CarController : VehicleBase
 		}
 
 
+	// Compute the longitudinal position of an axle (local)
+
+	float GetAxleLocalPosition (VPAxle axle)
+		{
+		return 0.5f * (GetWheelLocalPosition(axle.leftWheel).z + GetWheelLocalPosition(axle.rightWheel).z);
+		}
+
+
 	// Expose internal components
 
 	public override object GetInternalObject (System.Type type)
@@ -379,34 +380,6 @@ public class Perrinn424CarController : VehicleBase
 			return steering;
 
 		return null;
-		}
-
-
-	// Compute understeer-oversteer
-
-	void ComputeUndersteerAngle ()
-		{
-		// We define understeer as the difference between absolute front slip angle (average both wheels) and abolute rear slip angle (average both wheels).
-		// If positive then undesteer, if negative then oversteer.
-
-		float absFrontSlipAngle = GetAbsSlipAngle(wheelState[0], wheelState[1]);
-		float absRearSlipAngle = GetAbsSlipAngle(wheelState[2], wheelState[3]);
-		m_understeerAngle = absFrontSlipAngle - absRearSlipAngle;
-		}
-
-
-	float GetAbsSlipAngle (VehicleBase.WheelState leftWheel, VehicleBase.WheelState rightWheel)
-		{
-		if (leftWheel.grounded && rightWheel.grounded)
-			return MathUtility.FastAbs(0.5f * (leftWheel.slipAngle + rightWheel.slipAngle));
-		else
-		if (leftWheel.grounded)
-			return MathUtility.FastAbs(leftWheel.slipAngle);
-		else
-		if (rightWheel.grounded)
-			return MathUtility.FastAbs(rightWheel.slipAngle);
-		else
-			return float.NaN;
 		}
 
 
@@ -536,10 +509,9 @@ public class Perrinn424CarController : VehicleBase
 			*/
 			}
 
-		// Update inertia settings and ground tracking
+		// Track changes in the inertia settings
 
 		m_inertia.DoUpdate(cachedRigidbody);
-		m_groundTracker.DoUpdate(cachedTransform);
 
 		// Differential overrides
 
@@ -614,21 +586,25 @@ public class Perrinn424CarController : VehicleBase
 		customData[Perrinn424Data.ThrottleInput] = (int)(m_throttleInput * 1000.0f);
 		customData[Perrinn424Data.BrakePressure] = (int)(m_brakePressure * 1000.0f);
 		customData[Perrinn424Data.SteeringWheelAngle] = (int)(m_steerAngle * 1000.0f);
-		customData[Perrinn424Data.FrontDiffFriction] = (int)(m_frontPowertrain.differential.frictionTorque * 1000.0f);
-		customData[Perrinn424Data.RearDiffFriction] = (int)(m_rearPowertrain.differential.frictionTorque * 1000.0f);
 
 		m_frontPowertrain.FillDataBus(customData, Perrinn424Data.FrontMguBase);
 		m_rearPowertrain.FillDataBus(customData, Perrinn424Data.RearMguBase);
 
-		customData[Perrinn424Data.FrontRideHeight] = (int)(m_groundTracker.frontRideHeight * 1000.0f);
-		customData[Perrinn424Data.RearRideHeight] = (int)(m_groundTracker.rearRideHeight * 1000.0f);
-		customData[Perrinn424Data.FrontRollAngle] = (int)(m_groundTracker.frontRollAngle * 1000.0f);
-		customData[Perrinn424Data.RearRollAngle] = (int)(m_groundTracker.rearRollAngle * 1000.0f);
+		// Axle values
 
-		// Understeer
+		if (frontAxleReference != null)
+			{
+			m_frontAxleSensor.DoUpdate(frontAxleReference);
+			customData[Perrinn424Data.FrontRideHeight] = (int)(m_frontAxleSensor.GetRideHeight() * 1000.0f);
+			customData[Perrinn424Data.FrontRollAngle] = (int)(m_frontAxleSensor.GetRollAngle() * 1000.0f);
+			}
 
-		ComputeUndersteerAngle();
-		customData[Perrinn424Data.UndersteerAngle] = (int)(m_understeerAngle * 1000.0f);
+		if (rearAxleReference != null)
+			{
+			m_rearAxleSensor.DoUpdate(rearAxleReference);
+			customData[Perrinn424Data.RearRideHeight] = (int)(m_rearAxleSensor.GetRideHeight() * 1000.0f);
+			customData[Perrinn424Data.RearRollAngle] = (int)(m_rearAxleSensor.GetRollAngle() * 1000.0f);
+			}
 		}
 
 

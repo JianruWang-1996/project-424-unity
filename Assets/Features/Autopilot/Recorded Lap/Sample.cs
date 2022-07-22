@@ -6,7 +6,6 @@ namespace Perrinn424.AutopilotSystem
     [Serializable]
     public struct Sample
     {
-        public float speed;
         public Vector3 position;
         public Quaternion rotation;
 
@@ -27,7 +26,6 @@ namespace Perrinn424.AutopilotSystem
         {
             return new Sample
             {
-                speed = Mathf.Lerp(a.speed, b.speed, t),
                 position = Vector3.Lerp(a.position, b.position, t),
                 rotation = Quaternion.Lerp(a.rotation, b.rotation, t),
                 
@@ -49,7 +47,6 @@ namespace Perrinn424.AutopilotSystem
         {
             return new Sample
             {
-                speed = Mathf.LerpUnclamped(a.speed, b.speed, t),
                 position = Vector3.LerpUnclamped(a.position, b.position, t),
                 rotation = Quaternion.LerpUnclamped(a.rotation, b.rotation, t),
                 

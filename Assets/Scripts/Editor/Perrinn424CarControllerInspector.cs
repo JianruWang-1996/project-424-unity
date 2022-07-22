@@ -32,7 +32,8 @@ public class Perrinn424CarControllerInspector : VPInspector
 		DrawProperty("rearTires");
 		GUI.enabled = true;
 		Space();
-		DrawProperty("groundTracking");
+		DrawProperty("frontAxleReference");
+		DrawProperty("rearAxleReference");
 
 		DrawHeader("Powertrain and dynamics");
 

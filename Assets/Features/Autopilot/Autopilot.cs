@@ -26,9 +26,6 @@ namespace Perrinn424.AutopilotSystem
         [Header("Setup")]
 
         public InputType inputType;
-
-        [SerializeField]
-        private bool autoStart = false;
         
         [SerializeField]
         private AutopilotStartup startup;
@@ -62,12 +59,6 @@ namespace Perrinn424.AutopilotSystem
             pathDrawer.recordedLap = recordedLap;
 
             vehicle.onBeforeUpdateBlocks += UpdateAutopilot;
-            UpdateAutopilot();
-
-            if (autoStart)
-            {
-                SetStatus(true);
-            }
         }
 
         public override void OnDisableVehicle()
@@ -79,7 +70,7 @@ namespace Perrinn424.AutopilotSystem
         {
             autopilotSearcher.Search(vehicle.transform);
             ReferenceSample = GetInterpolatedNearestSample();
-            ReferenceSpeed = ReferenceSample.speed;
+            ReferenceSpeed = CalculateReferenceSpeed(autopilotSearcher.Segment);
             PlayingTime = CalculatePlayingTime();
             DeltaTime = timer.currentLapTime - PlayingTime;
             pathDrawer.index = autopilotSearcher.StartIndex;
@@ -197,6 +188,12 @@ namespace Perrinn424.AutopilotSystem
         public override float CalculateDuration()
         {
             return recordedLap.lapTime;
+        }
+
+        private float CalculateReferenceSpeed(Vector3 segment)
+        {
+            //TODO add speed to recorded lap
+            return segment.magnitude * recordedLap.frequency;
         }
 
         private void OnDrawGizmos()

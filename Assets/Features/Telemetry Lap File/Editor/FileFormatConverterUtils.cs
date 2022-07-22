@@ -166,8 +166,7 @@ namespace Perrinn424.TelemetryLapSystem.Editor
                     gear = 0,
                     steeringAngle = float.NaN,
                     throttle = float.NaN,
-                    brakePressure = float.NaN,
-                    speed = float.NaN
+                    brakePressure = float.NaN
 
                 };
 
@@ -192,8 +191,6 @@ namespace Perrinn424.TelemetryLapSystem.Editor
             for (int rowIndex = 0; rowIndex < table.RowCount; rowIndex++)
             {
                 Sample sample = new Sample();
-
-                sample.speed = table[rowIndex, "SPEED"] / 3.6f; //km/h => m/s
 
                 float x = table[rowIndex, "POSITIONX"];
                 float y = table[rowIndex, "POSITIONY"];

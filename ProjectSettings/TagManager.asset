@@ -15,11 +15,11 @@ TagManager:
   - 
   - Vehicles
   - SteeringScreen
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Road
+  - Traffic
+  - Buildings
+  - Obstacles
+  - Player
   - 
   - 
   - 

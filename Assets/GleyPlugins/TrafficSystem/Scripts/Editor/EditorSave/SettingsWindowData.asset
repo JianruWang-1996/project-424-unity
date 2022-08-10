@@ -15,26 +15,26 @@ MonoBehaviour:
   drawWaypoints: 1
   drawLaneChange: 1
   createRoadSave:
-    viewOtherRoads: 0
+    viewOtherRoads: 1
     viewRoadsSettings:
-      viewLanes: 0
-      viewWaypoints: 0
-      viewLaneChanges: 0
+      viewLanes: 1
+      viewWaypoints: 1
+      viewLaneChanges: 1
   viewRoadsSave:
     viewRoadsSettings:
       viewLanes: 1
-      viewWaypoints: 0
+      viewWaypoints: 1
       viewLaneChanges: 0
   connectRoadsSave:
     viewRoadsSettings:
       viewLanes: 0
       viewWaypoints: 1
       viewLaneChanges: 0
-    waypointDistance: 2
+    waypointDistance: 4
   roadDefaults:
     nrOfLanes: 2
-    laneWidth: 5.9
-    waypointDistance: 3
+    laneWidth: 5.5
+    waypointDistance: 5
   roadColors:
     textColor: {r: 1, g: 1, b: 1, a: 1}
     roadColor: {r: 0, g: 1, b: 0, a: 1}
@@ -58,7 +58,7 @@ MonoBehaviour:
   allWaypointsSettings:
     showConnections: 1
     showOtherLanes: 1
-    showSpeed: 0
+    showSpeed: 1
     showCars: 0
   disconnectedWaypointsSettings:
     showConnections: 0
@@ -86,7 +86,7 @@ MonoBehaviour:
   speedEditedWaypointsSettings:
     showConnections: 0
     showOtherLanes: 0
-    showSpeed: 0
+    showSpeed: 1
     showCars: 0
   giveWayWaypointsSettings:
     showConnections: 0
@@ -101,7 +101,8 @@ MonoBehaviour:
   speedRoutesSave:
     routesColor:
     - {r: 1, g: 1, b: 1, a: 1}
-    active: 01
+    - {r: 0.6792453, g: 0.16340333, b: 0.16340333, a: 1}
+    active: 0101
   intersectionSave:
     showAll: 1
     showExit: 1
